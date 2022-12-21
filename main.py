@@ -106,14 +106,24 @@ class Sim:
 			selected_by_me = copy.deepcopy(self.blue)
 		safe_available_moves = 0
 		if not self.is_selctions_safe(selected_by_me):
-			return -100
+			if self.turn == 'red':
+				return -100
+			else:
+				return +100
 		while len(availables) > 0:
 			new_selection = availables.pop()
 			selected_by_me.append(new_selection)
 			if self.is_selctions_safe(selected_by_me):
-				safe_available_moves += 1
+				if self.turn == 'red':
+					safe_available_moves += 1
+				else:
+					safe_available_moves -= 1
+
 			selected_by_me.remove(new_selection)
-		return safe_available_moves
+		if safe_available_moves != 0:
+			return safe_available_moves
+		else:
+			return -100
 
 	def is_selctions_safe(self, selections):
 		if len(selections) < 3:
@@ -146,7 +156,7 @@ class Sim:
 
 		for move in possible_moves:
 			score = self.normal_minimize(remaining_depth - 1)[1]
-			if score >= max_score:
+			if score > max_score:
 				max_score, final_move = score, move
 
 		return final_move, max_score
@@ -164,7 +174,7 @@ class Sim:
 
 		for move in possible_moves:
 			score = self.normal_maximize(remaining_depth - 1)[1]
-			if score <= min_score:
+			if score < min_score:
 				min_score, final_move = score, move
 
 		return final_move, min_score
@@ -182,15 +192,11 @@ class Sim:
 		self.initialize()
 		while True:
 			if self.turn == 'red':
-				# print(selection)
-				# sleep(5)
 				selection = self.minimax(depth=self.minimax_depth, player_turn=self.turn)[0]
 				if selection[1] < selection[0]:
 					selection = (selection[1], selection[0])
 			else:
 				selection = self.enemy()
-				# print(selection)
-				# sleep(5)
 				if selection[1] < selection[0]:
 					selection = (selection[1], selection[0])
 			if selection in self.red or selection in self.blue:
@@ -230,11 +236,11 @@ class Sim:
 
 if __name__ == "__main__":
 
-	# game = Sim(minimax_depth=int(argv[1]), prune=True, gui=bool(int(argv[2])))
-	game = Sim(minimax_depth=3, prune=False, gui=True)
+	game = Sim(minimax_depth=int(argv[1]), prune=False, gui=bool(int(argv[2])))
+	# game = Sim(minimax_depth=3, prune=False, gui=True)
 
 	results = {"red": 0, "blue": 0}
-	for i in range(10):
+	for i in range(20):
 		print(i)
 		results[game.play()] += 1
 
