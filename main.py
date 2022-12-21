@@ -1,3 +1,5 @@
+import copy
+
 from select import select
 # from symbol import dotted_as_name
 import turtle
@@ -5,6 +7,7 @@ import math
 import random
 from time import sleep
 from sys import argv
+
 
 class Sim:
 	# Set true for graphical interface
@@ -96,11 +99,75 @@ class Sim:
 
 	def _evaluate(self):
 		# TODO
-		a = 2
+		availables = copy.deepcopy(self.available_moves)
+		if self.turn == 'red':
+			selected_by_me = copy.deepcopy(self.red)
+		else:
+			selected_by_me = copy.deepcopy(self.blue)
+		safe_available_moves = 0
+		if not self.is_selctions_safe(selected_by_me):
+			return -100
+		while len(availables) > 0:
+			new_selection = availables.pop()
+			selected_by_me.append(new_selection)
+			if self.is_selctions_safe(selected_by_me):
+				safe_available_moves += 1
+			selected_by_me.remove(new_selection)
+		return safe_available_moves
+
+	def is_selctions_safe(self, selections):
+		if len(selections) < 3:
+			return True
+		selections.sort()
+		for i in range(len(selections) - 2):
+			for j in range(i + 1, len(selections) - 1):
+				for k in range(j + 1, len(selections)):
+					if selections[i][0] == selections[j][0] and selections[i][1] == selections[k][0] and selections[j][1] == selections[k][1]:
+						return False
+		return True
 
 	def minimax(self, depth, player_turn):
 		# TODO
-		a = 1
+		if player_turn == 'red':
+			return self.normal_maximize(depth)
+		else:
+			return self.normal_minimize(depth)
+
+	def normal_maximize(self, remaining_depth):
+		res = self.gameover(self.red, self.blue)
+		if remaining_depth == 0 or res != 0:
+			return None, self._evaluate()
+
+		possible_moves = self.available_moves
+		max_score = float('-inf')
+
+		if len(possible_moves) == 0:
+			return None, 0
+
+		for move in possible_moves:
+			score = self.normal_minimize(remaining_depth - 1)[1]
+			if score >= max_score:
+				max_score, final_move = score, move
+
+		return final_move, max_score
+
+	def normal_minimize(self, remaining_depth):
+		res = self.gameover(self.red, self.blue)
+		if remaining_depth == 0 or res != 0:
+			return None, self._evaluate()
+
+		min_score = float('inf')
+		possible_moves = self.available_moves
+
+		if len(possible_moves) == 0:
+			return None, 0
+
+		for move in possible_moves:
+			score = self.normal_maximize(remaining_depth - 1)[1]
+			if score <= min_score:
+				min_score, final_move = score, move
+
+		return final_move, min_score
 
 	def _swap_turn(self, turn):
 		if turn == 'red':
@@ -115,11 +182,15 @@ class Sim:
 		self.initialize()
 		while True:
 			if self.turn == 'red':
+				# print(selection)
+				# sleep(5)
 				selection = self.minimax(depth=self.minimax_depth, player_turn=self.turn)[0]
 				if selection[1] < selection[0]:
 					selection = (selection[1], selection[0])
 			else:
 				selection = self.enemy()
+				# print(selection)
+				# sleep(5)
 				if selection[1] < selection[0]:
 					selection = (selection[1], selection[0])
 			if selection in self.red or selection in self.blue:
